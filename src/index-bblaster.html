@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>sync</title>
+    <style media="screen">
+
+      .boxes {
+        border:1px solid grey;
+      }
+
+      .boxes > *{
+        margin:1em;
+        width:25px;
+        height: 25px;
+        background-color:green;
+        border:1px solid grey;
+        float:left;
+      }
+
+      .boxes > *:hover{
+        background-color:red;
+      }
+
+
+      .right {
+        float:right;
+        background-color:blue;
+      }
+
+
+
+    </style>
+  </head>
+  <body>
+    <div class="boxes">
+
+    </div>
+
+    <script type="text/javascript">
+
+      var $divBoxes = document.querySelector('.boxes');
+
+      var conn = new WebSocket('ws://localhost:8080');
+
+
+      var kill = function(){
+        conn.send(JSON.stringify({'killed': this.id}));
+      }
+
+      var render = function(boxes){
+        for (var i=0; i < boxes.length; i++){
+          var $div = document.createElement('div');
+          var box = boxes[i];
+          $div.id = box.id;
+          $div.style.position = "absolute";
+          $div.style.left = box.x +'px';
+          $div.style.top = box.y +'px';
+          $div.onclick = kill;
+          $divBoxes.appendChild($div);
+        }
+      }
+
+
+      conn.onerror = function(e){
+        alert('gloups error:' + e.data);
+      }
+      conn.onopen = function(e) {
+        console.log("ok connected");
+      }
+
+      conn.onmessage = function(e) {
+        console.log(e.data);
+        var data = JSON.parse(e.data);
+        if (data.init) { //init phase
+          render(data.init);
+        }else if (data.update){
+          render(data.update);
+        }else if(data.killed){
+          var $box = document.getElementById(data.killed);
+          $box.outerHTML = "";
+          delete $box;
+          if ($divBoxes.childElementCount==0){
+            alert('coool ! successfull blast!, reload page to reconnect');
+            conn.close();
+          }
+        }
+      };
+
+
+    </script>
+  </body>
+</html>
