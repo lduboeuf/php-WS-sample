@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>sync</title>
+    <style media="screen">
+
+      .boxes {
+        border:1px solid grey;
+      }
+
+      .boxes > *{
+        margin:1em;
+        width:25px;
+        height: 25px;
+        background-color:green;
+        border:1px solid grey;
+        float:left;
+      }
+
+      .boxes > *:hover{
+        background-color:red;
+      }
+
+
+      .right {
+        float:right;
+        background-color:blue;
+      }
+
+
+
+    </style>
+  </head>
+  <body>
+    <div class="boxes">
+      <div id="box1">1
+      </div>
+      <div id="box2">2
+      </div>
+      <div id="box3">3
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      var $divBoxes = document.querySelector('.boxes');
+
+
+
+      var boxes_pos = [0,0,0];
+
+
+      var togglePosition = function(){
+          this.classList.toggle('right');
+          //find position of current div
+          var idx = [].indexOf.call(this.parentNode.children, this);
+          (boxes_pos[idx]==0) ?  boxes_pos[idx]=1 :  boxes_pos[idx]=0;
+          conn.send(JSON.stringify({boxes_pos: boxes_pos}));
+          console.log(boxes_pos);
+      }
+
+      var render = function(){
+        var $boxes = $divBoxes.children;
+        for (var i = 0; i < boxes_pos.length; i++){
+          (boxes_pos[i]==0) ?  $boxes[i].className = '' :  $boxes[i].className = 'right';
+        }
+      }
+
+      var $boxes = document.querySelectorAll('.boxes > *');
+      for (var i =0; i < $boxes.length; i++){
+        $boxes[i].onclick = togglePosition
+      }
+
+
+      var conn = new WebSocket('ws://localhost:8080');
+      conn.onerror = function(e){
+        alert('gloups error:' + e.data);
+      }
+      conn.onopen = function(e) {
+        console.log("ok connected");
+      }
+
+      conn.onmessage = function(e) {
+        console.log(e.data);
+        var data = JSON.parse(e.data);
+        boxes_pos = data.boxes_pos;
+        render();
+      };
+
+
+    </script>
+  </body>
+</html>

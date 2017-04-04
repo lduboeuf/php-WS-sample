@@ -1,0 +1,20 @@
+{
+    "name": "lduboeuf/chat-server",
+    "description": "simple php chat server using websocket",
+    "autoload": {
+        "psr-0": {
+            "ChatServer": "src"
+        }
+    },
+    "require": {
+        "cboden/ratchet": "^0.3.6"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "lduboeuf",
+            "email": "lduboeuf@ouvaton.org"
+        }
+    ]
+
+}

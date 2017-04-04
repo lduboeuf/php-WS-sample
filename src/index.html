@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Chat room</title>
+    <style media="screen">
+
+      #start-page{
+        text-align: center;
+      }
+      #start-page form{
+        display: inline-block;
+      }
+
+      #chat-page {
+        display: none;
+      }
+      .room{
+        border:1px solid grey;
+        height:300px;
+        overflow: auto;
+      }
+
+      .my-msg {
+        color:red;
+      }
+      .room-msg {
+        color:green;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div id="start-page">
+      <form>
+        <input type="text" name="pseudo" placeholder="enter your pseudo">
+        <input type="submit" name="start" value="start">
+      </form>
+    </div>
+
+    <div id="chat-page">
+      <div class="room">
+
+      </div>
+      <form>
+        <input type="text" name="msg" placeholder="your msg here">
+        <input type="submit" name="ok" value="ok">
+      </form>
+    </div>
+
+
+
+    <script type="text/javascript">
+
+    var $startPage = document.querySelector('#start-page');
+    var $btnStart = $startPage.querySelector('input[name="start"]');
+    var $pseudo = $startPage.querySelector('input[name="pseudo"]');
+
+    var $chatPage = document.querySelector('#chat-page');
+    var $room = $chatPage.querySelector('.room');
+    var $btnOK = $chatPage.querySelector('input[name="ok"]');
+    var $msg = $chatPage.querySelector('input[name="msg"]');
+
+    var conn = null;
+    var pseudo = null;
+
+    var start = function(){
+
+      conn = new WebSocket('ws://localhost:8080');
+      conn.onerror = function(e){
+        alert('gloups error:' + e.data);
+      }
+      conn.onopen = function(e) {
+        $chatPage.style.display ='block';
+        $startPage.style.display='none';
+      }
+
+      conn.onmessage = function(e) {
+        console.log(e.data);
+        var $p = document.createElement('p');
+        $p.classList.add('room-msg');
+        $p.innerHTML = e.data;
+        $room.appendChild($p);
+      };
+
+    }
+
+    //connect to WS and toggle chat room visibility
+    $btnStart.onclick = function(e){
+      e.preventDefault();
+      pseudo = $pseudo.value;
+      start();
+    }
+
+    $btnOK.onclick = function(e){
+      e.preventDefault();
+      var msg = pseudo + ":" + $msg.value
+      conn.send(msg);
+      var $p = document.createElement('p');
+      $p.classList.add('my-msg');
+      $p.innerHTML = msg;
+      $room.appendChild($p);
+
+    }
+
+    </script>
+  </body>
+</html>
