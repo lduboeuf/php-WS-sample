@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>sync</title>
+    <style media="screen">
+
+    .mode{
+      float:right;
+    }
+
+      .boxes {
+        border:1px solid grey;
+        width: 800px;
+        height: 800px;
+        position: fixed;
+      }
+
+      .boxes > *{
+        margin:1em;
+        width:25px;
+        height: 25px;
+        background-color:green;
+        border:1px solid grey;
+        float:left;
+      }
+
+      .boxes > *:hover{
+        background-color:red;
+      }
+
+
+      .right {
+        float:right;
+        background-color:blue;
+      }
+
+
+      /* The switch - the box around the slider */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+      }
+
+      /* Hide default HTML checkbox */
+      .switch input {display:none;}
+
+      /* The slider */
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        -webkit-transition: .4s;
+        transition: .4s;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+      }
+
+      input:checked + .slider {
+        background-color: #2196F3;
+      }
+
+      input:focus + .slider {
+        box-shadow: 0 0 1px #2196F3;
+      }
+
+      input:checked + .slider:before {
+        -webkit-transform: translateX(26px);
+        -ms-transform: translateX(26px);
+        transform: translateX(26px);
+      }
+
+
+    </style>
+  </head>
+  <body>
+    <div class="boxes">
+
+    </div>
+    <div class="mode">
+      <h3>Switch mode:<span id="mode-label">Killer</span></h3>
+      <label class="switch">
+        <input type="checkbox" name="mode">
+        <div class="slider"></div>
+      </label>
+    </div>
+
+    <script type="text/javascript">
+
+      var $divBoxes = document.querySelector('.boxes');
+      var $mod = document.querySelector('.mode input[name="mode"]');
+
+      var $mod_label =  document.getElementById('mode-label');
+
+      var mode = 'killer';
+
+      $mod.onchange = function(){
+        if (this.checked){
+            console.log('spammer');
+            $mod_label.innerHTML = 'Spammer';
+
+            $divBoxes.onclick = function(e){
+              var box = {id:generateUID(), x: e.clientX, y:e.clientY};
+              createBox(box);
+              conn.send(JSON.stringify({'new': box}))
+            }
+        }else{
+          console.log('killer');
+          $mod_label.innerHTML = 'Killer';
+          $divBoxes.onclick = '';
+        }
+      }
+
+      var createBox = function(box){
+        var $div = document.createElement('div');
+        $div.id = box.id;
+        $div.style.position = "absolute";
+        $div.style.left = box.x +'px';
+        $div.style.top = box.y +'px';
+        $div.onclick = kill;
+        $divBoxes.appendChild($div);
+
+      }
+
+      var conn = new WebSocket('ws://localhost:8080');
+
+
+      var kill = function(){
+        killBox(this.id);
+        conn.send(JSON.stringify({'killed': this.id}));
+      }
+
+      var killBox = function(id){
+        var $box = document.getElementById(id);
+        $box.outerHTML = "";
+        delete $box;
+        if ($divBoxes.childElementCount==0){
+          alert('coool ! successfull blast!, reload page to reconnect');
+          conn.close();
+        }
+      }
+
+      var render = function(boxes){
+        for (var i=0; i < boxes.length; i++){
+          var $div = document.createElement('div');
+          var box = boxes[i];
+          $div.id = box.id;
+          $div.style.position = "absolute";
+          $div.style.left = box.x +'px';
+          $div.style.top = box.y +'px';
+          $div.onclick = kill;
+          $divBoxes.appendChild($div);
+        }
+      }
+
+
+      conn.onerror = function(e){
+        alert('gloups error:' + e.data);
+      }
+      conn.onopen = function(e) {
+        console.log("ok connected");
+      }
+
+      conn.onmessage = function(e) {
+        console.log(e.data);
+        var data = JSON.parse(e.data);
+        if (data.init) { //init phase
+          render(data.init);
+        }else if (data.update){
+          render(data.update);
+        }else if(data.killed){
+          killBox(data.killed);
+        }else if(data.new){
+          createBox(data.new);
+        }
+      };
+
+      var ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      var ID_LENGTH = 8;
+
+      var generateUID = function() {
+        var rtn = '';
+        for (var i = 0; i < ID_LENGTH; i++) {
+          rtn += ALPHABET.charAt(Math.floor(Math.random() * ALPHABET.length));
+        }
+        return rtn;
+      }
+
+      var findById = function(collection, id){
+        for (var i = 0; i < collection.length; i++) {
+          if (collection[i].id === id) {
+            return collection[i];
+          }
+        }
+        return null;
+      }
+
+    </script>
+  </body>
+</html>

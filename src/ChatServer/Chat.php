@@ -5,25 +5,29 @@ use Ratchet\ConnectionInterface;
 
 class Chat implements MessageComponentInterface {
     protected $clients;
-    private $datas;
+    private $datas = [];
 
     public function __construct() {
         $this->clients = new \SplObjectStorage;
     }
 
     public function onOpen(ConnectionInterface $conn) {
+
+        //we send in memory chat for new comers
+        foreach ($this->datas as $data) {
+          $conn->send($data);
+        }
+
+
         // Store the new connection to send messages to later
         $this->clients->attach($conn);
-        if ($this->datas){
-          $conn->send($this->datas);
-        }
 
         echo "New connection! ({$conn->resourceId})\n";
     }
 
     public function onMessage(ConnectionInterface $from, $msg) {
         $numRecv = count($this->clients) - 1;
-        $this->datas = $msg;
+        $this->datas[] = $msg;
         echo sprintf('Connection %d sending message "%s" to %d other connection%s' . "\n"
             , $from->resourceId, $msg, $numRecv, $numRecv == 1 ? '' : 's');
 
